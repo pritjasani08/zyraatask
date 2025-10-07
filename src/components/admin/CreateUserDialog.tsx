@@ -35,6 +35,22 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
       // Validate input
       const validated = userSchema.parse({ email, username, fullName, password });
 
+      // Check if user already exists
+      const { data: existingProfile } = await supabase
+        .from("profiles")
+        .select("username, email")
+        .or(`email.eq.${validated.email},username.eq.${validated.username}`)
+        .maybeSingle();
+
+      if (existingProfile) {
+        if (existingProfile.email === validated.email) {
+          throw new Error("A user with this email already exists");
+        }
+        if (existingProfile.username === validated.username) {
+          throw new Error("This username is already taken");
+        }
+      }
+
       // Create user account
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: validated.email,
@@ -48,7 +64,14 @@ export function CreateUserDialog({ open, onOpenChange }: CreateUserDialogProps) 
         },
       });
 
-      if (authError) throw authError;
+      if (authError) {
+        // Handle specific auth errors
+        if (authError.message.includes("already registered")) {
+          throw new Error("A user with this email already exists");
+        }
+        throw authError;
+      }
+      
       if (!authData.user) throw new Error("Failed to create user");
 
       // Assign user role

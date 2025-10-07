@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle2, XCircle, Clock, Eye } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { ViewProofDialog } from "./ViewProofDialog";
 
 interface Task {
   id: string;
@@ -27,6 +28,7 @@ interface TaskListProps {
 export function TaskList({ status }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
+  const [viewProofTask, setViewProofTask] = useState<{ id: string; number: number } | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -162,8 +164,9 @@ export function TaskList({ status }: TaskListProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {tasks.map((task) => (
+    <>
+      <div className="space-y-4">
+        {tasks.map((task) => (
         <Card key={task.id} className="p-6 hover:shadow-md transition-smooth">
           <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
             <div className="flex-1 space-y-3">
@@ -193,13 +196,24 @@ export function TaskList({ status }: TaskListProps) {
 
             <div className="flex flex-col items-end gap-3">
               {getStatusBadge(task.status)}
+              {(task.status === "awaiting_approval" || task.status === "completed") && (
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setViewProofTask({ id: task.id, number: task.task_number })}
+                  className="w-full"
+                >
+                  <Eye className="w-4 h-4 mr-1" />
+                  View Proof
+                </Button>
+              )}
               {task.status === "awaiting_approval" && (
-                <div className="flex gap-2">
+                <div className="flex gap-2 w-full">
                   <Button
                     size="sm"
                     variant="outline"
                     onClick={() => handleReject(task.id, task.task_number)}
-                    className="text-destructive border-destructive/30 hover:bg-destructive/10"
+                    className="flex-1 text-destructive border-destructive/30 hover:bg-destructive/10"
                   >
                     <XCircle className="w-4 h-4 mr-1" />
                     Reject
@@ -207,7 +221,7 @@ export function TaskList({ status }: TaskListProps) {
                   <Button
                     size="sm"
                     onClick={() => handleApprove(task.id, task.task_number)}
-                    className="gradient-secondary hover:opacity-90"
+                    className="flex-1 gradient-secondary hover:opacity-90"
                   >
                     <CheckCircle2 className="w-4 h-4 mr-1" />
                     Approve
@@ -217,7 +231,17 @@ export function TaskList({ status }: TaskListProps) {
             </div>
           </div>
         </Card>
-      ))}
-    </div>
+        ))}
+      </div>
+
+      {viewProofTask && (
+        <ViewProofDialog
+          taskId={viewProofTask.id}
+          taskNumber={viewProofTask.number}
+          open={!!viewProofTask}
+          onOpenChange={(open) => !open && setViewProofTask(null)}
+        />
+      )}
+    </>
   );
 }

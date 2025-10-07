@@ -26,45 +26,54 @@ export function CompleteTaskDialog({
   onOpenChange,
   onComplete,
 }: CompleteTaskDialogProps) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [uploading, setUploading] = useState(false);
   const { toast } = useToast();
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const selectedFile = e.target.files?.[0];
-    if (selectedFile) {
-      // Validate file size (max 5MB)
-      if (selectedFile.size > 5 * 1024 * 1024) {
+    const selectedFiles = Array.from(e.target.files || []);
+    
+    // Validate each file
+    const validFiles: File[] = [];
+    for (const file of selectedFiles) {
+      // Validate file size (max 10MB per file)
+      if (file.size > 10 * 1024 * 1024) {
         toast({
           variant: "destructive",
           title: "File too large",
-          description: "Please select a file smaller than 5MB",
+          description: `${file.name} is larger than 10MB`,
         });
-        return;
+        continue;
       }
 
-      // Validate file type
-      if (!selectedFile.type.startsWith("image/")) {
+      // Validate file type (images and videos)
+      if (!file.type.startsWith("image/") && !file.type.startsWith("video/")) {
         toast({
           variant: "destructive",
           title: "Invalid file type",
-          description: "Please select an image file",
+          description: `${file.name} must be an image or video`,
         });
-        return;
+        continue;
       }
 
-      setFile(selectedFile);
+      validFiles.push(file);
     }
+
+    setFiles(prev => [...prev, ...validFiles]);
+  };
+
+  const removeFile = (index: number) => {
+    setFiles(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!file) {
+    if (files.length === 0) {
       toast({
         variant: "destructive",
-        title: "No file selected",
-        description: "Please select a screenshot to upload",
+        title: "No files selected",
+        description: "Please upload at least one proof file (photo or video)",
       });
       return;
     }
@@ -75,26 +84,32 @@ export function CompleteTaskDialog({
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
-      // Upload screenshot to storage
-      const fileExt = file.name.split(".").pop();
-      const fileName = `${user.id}/${task.id}-${Date.now()}.${fileExt}`;
+      // Upload all files to storage
+      const uploadPromises = files.map(async (file) => {
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${user.id}/${task.id}-${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
-      const { error: uploadError } = await supabase.storage
-        .from("task-screenshots")
-        .upload(fileName, file);
+        const { error: uploadError } = await supabase.storage
+          .from("task-screenshots")
+          .upload(fileName, file);
 
-      if (uploadError) throw uploadError;
+        if (uploadError) throw uploadError;
 
-      // Save screenshot reference
-      const { error: dbError } = await supabase
-        .from("task_screenshots")
-        .insert({
-          task_id: task.id,
-          user_id: user.id,
-          file_path: fileName,
-        });
+        // Save screenshot reference
+        const { error: dbError } = await supabase
+          .from("task_screenshots")
+          .insert({
+            task_id: task.id,
+            user_id: user.id,
+            file_path: fileName,
+          });
 
-      if (dbError) throw dbError;
+        if (dbError) throw dbError;
+
+        return fileName;
+      });
+
+      await Promise.all(uploadPromises);
 
       // Update task status
       const { error: taskError } = await supabase
@@ -106,10 +121,10 @@ export function CompleteTaskDialog({
 
       toast({
         title: "Task submitted for approval",
-        description: "Your screenshot has been uploaded successfully",
+        description: `${files.length} file(s) uploaded successfully`,
       });
 
-      setFile(null);
+      setFiles([]);
       onComplete();
     } catch (error: any) {
       toast({
@@ -138,21 +153,46 @@ export function CompleteTaskDialog({
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="screenshot">Screenshot</Label>
-            <div className="flex items-center gap-3">
-              <Input
-                id="screenshot"
-                type="file"
-                accept="image/*"
-                onChange={handleFileChange}
-                disabled={uploading}
-                className="cursor-pointer"
-              />
-            </div>
-            {file && (
-              <p className="text-sm text-muted-foreground">
-                Selected: {file.name} ({(file.size / 1024).toFixed(2)} KB)
-              </p>
+            <Label htmlFor="proof">Upload Proof (Photos/Videos)</Label>
+            <Input
+              id="proof"
+              type="file"
+              accept="image/*,video/*"
+              multiple
+              onChange={handleFileChange}
+              disabled={uploading}
+              className="cursor-pointer"
+            />
+            <p className="text-xs text-muted-foreground">
+              You can upload multiple photos and videos (max 10MB each)
+            </p>
+            
+            {files.length > 0 && (
+              <div className="mt-3 space-y-2">
+                <p className="text-sm font-medium">Selected files ({files.length}):</p>
+                <div className="space-y-1 max-h-32 overflow-y-auto">
+                  {files.map((file, index) => (
+                    <div
+                      key={index}
+                      className="flex items-center justify-between text-sm p-2 bg-muted rounded"
+                    >
+                      <span className="truncate flex-1">
+                        {file.name} ({(file.size / 1024).toFixed(2)} KB)
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => removeFile(index)}
+                        disabled={uploading}
+                        className="h-6 w-6 p-0 ml-2"
+                      >
+                        ×
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 
@@ -168,7 +208,7 @@ export function CompleteTaskDialog({
             </Button>
             <Button
               type="submit"
-              disabled={uploading || !file}
+              disabled={uploading || files.length === 0}
               className="flex-1 gradient-primary hover:opacity-90"
             >
               {uploading ? (
@@ -176,7 +216,7 @@ export function CompleteTaskDialog({
               ) : (
                 <>
                   <Upload className="w-4 h-4 mr-2" />
-                  Submit
+                  Submit {files.length > 0 && `(${files.length})`}
                 </>
               )}
             </Button>

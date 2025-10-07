@@ -16,6 +16,7 @@ interface Task {
   deadline: string;
   status: string;
   created_at: string;
+  assigned_to: string;
 }
 
 interface UserTaskListProps {
@@ -27,9 +28,11 @@ export function UserTaskList({ filter }: UserTaskListProps) {
   const [loading, setLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [completeDialogOpen, setCompleteDialogOpen] = useState(false);
+  const [currentUserId, setCurrentUserId] = useState<string>("");
   const { toast } = useToast();
 
   useEffect(() => {
+    getCurrentUser();
     loadTasks();
 
     // Subscribe to task changes
@@ -53,6 +56,13 @@ export function UserTaskList({ filter }: UserTaskListProps) {
     };
   }, [filter]);
 
+  const getCurrentUser = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      setCurrentUserId(user.id);
+    }
+  };
+
   const loadTasks = async () => {
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -61,7 +71,6 @@ export function UserTaskList({ filter }: UserTaskListProps) {
       let query = supabase
         .from("tasks")
         .select("*")
-        .eq("assigned_to", user.id)
         .order("created_at", { ascending: false });
 
       if (filter === "pending") {
@@ -161,7 +170,8 @@ export function UserTaskList({ filter }: UserTaskListProps) {
 
                 <div className="flex flex-col items-end gap-3">
                   {getStatusBadge(task.status)}
-                  {(task.status === "pending" || task.status === "rejected") && (
+                  {(task.status === "pending" || task.status === "rejected") && 
+                   task.assigned_to === currentUserId && (
                     <Button
                       size="sm"
                       onClick={() => handleMarkComplete(task)}
