@@ -120,6 +120,7 @@ export type Database = {
           deadline: string
           description: string | null
           id: string
+          start_date: string | null
           status: string | null
           task_number: number
           title: string
@@ -133,6 +134,7 @@ export type Database = {
           deadline: string
           description?: string | null
           id?: string
+          start_date?: string | null
           status?: string | null
           task_number?: number
           title: string
@@ -146,6 +148,7 @@ export type Database = {
           deadline?: string
           description?: string | null
           id?: string
+          start_date?: string | null
           status?: string | null
           task_number?: number
           title?: string

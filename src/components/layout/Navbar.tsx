@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Bell, LogOut, User } from "lucide-react";
+import { LogOut, User } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "@/hooks/use-toast";
@@ -9,15 +9,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Badge } from "@/components/ui/badge";
+import { NotificationBell } from "./NotificationBell";
 
 interface NavbarProps {
   username?: string;
   role?: "admin" | "user";
-  unreadNotifications?: number;
 }
 
-export function Navbar({ username, role, unreadNotifications = 0 }: NavbarProps) {
+export function Navbar({ username, role }: NavbarProps) {
   const navigate = useNavigate();
   const { toast } = useToast();
 
@@ -52,19 +51,7 @@ export function Navbar({ username, role, unreadNotifications = 0 }: NavbarProps)
         </div>
 
         <div className="flex items-center gap-3">
-          {role === "user" && (
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="w-5 h-5" />
-              {unreadNotifications > 0 && (
-                <Badge
-                  variant="destructive"
-                  className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center text-xs"
-                >
-                  {unreadNotifications}
-                </Badge>
-              )}
-            </Button>
-          )}
+          <NotificationBell />
 
           <DropdownMenu>
             <DropdownMenuTrigger asChild>

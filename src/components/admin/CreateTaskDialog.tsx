@@ -31,6 +31,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [assignedTo, setAssignedTo] = useState("");
+  const [startDate, setStartDate] = useState("");
   const [deadline, setDeadline] = useState("");
   const [users, setUsers] = useState<User[]>([]);
   const [loading, setLoading] = useState(false);
@@ -67,6 +68,10 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
     try {
       // Validate input
       const validated = taskSchema.parse({ title, description, assignedTo, deadline });
+      
+      if (!startDate) {
+        throw new Error("Start date is required");
+      }
 
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
@@ -80,6 +85,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
           description: validated.description,
           assigned_to: validated.assignedTo,
           created_by: user.id,
+          start_date: new Date(startDate).toISOString(),
           deadline: new Date(validated.deadline).toISOString(),
         })
         .select()
@@ -111,6 +117,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
       setTitle("");
       setDescription("");
       setAssignedTo("");
+      setStartDate("");
       setDeadline("");
       onOpenChange(false);
     } catch (error: any) {
@@ -183,6 +190,19 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
           </div>
 
           <div className="space-y-2">
+            <Label htmlFor="startDate">Start Date</Label>
+            <Input
+              id="startDate"
+              type="datetime-local"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              required
+              disabled={loading}
+              min={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
+            />
+          </div>
+
+          <div className="space-y-2">
             <Label htmlFor="deadline">Deadline</Label>
             <Input
               id="deadline"
@@ -191,7 +211,7 @@ export function CreateTaskDialog({ open, onOpenChange }: CreateTaskDialogProps) 
               onChange={(e) => setDeadline(e.target.value)}
               required
               disabled={loading}
-              min={format(new Date(), "yyyy-MM-dd'T'HH:mm")}
+              min={startDate || format(new Date(), "yyyy-MM-dd'T'HH:mm")}
             />
           </div>
 

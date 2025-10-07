@@ -11,11 +11,9 @@ const UserDashboard = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(true);
   const [username, setUsername] = useState("");
-  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
     checkAuth();
-    loadUnreadNotifications();
   }, []);
 
   const checkAuth = async () => {
@@ -64,23 +62,6 @@ const UserDashboard = () => {
     }
   };
 
-  const loadUnreadNotifications = async () => {
-    try {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return;
-
-      const { count } = await supabase
-        .from("notifications")
-        .select("*", { count: "exact", head: true })
-        .eq("user_id", user.id)
-        .eq("read", false);
-
-      setUnreadCount(count || 0);
-    } catch (error) {
-      console.error("Error loading notifications:", error);
-    }
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -91,7 +72,7 @@ const UserDashboard = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      <Navbar username={username} role="user" unreadNotifications={unreadCount} />
+      <Navbar username={username} role="user" />
 
       <div className="container mx-auto px-4 py-8">
         <div className="mb-8">

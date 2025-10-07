@@ -68,9 +68,12 @@ export function UserTaskList({ filter }: UserTaskListProps) {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return;
 
+      const now = new Date().toISOString();
+      
       let query = supabase
         .from("tasks")
         .select("*")
+        .lte("start_date", now)
         .order("created_at", { ascending: false });
 
       if (filter === "pending") {
