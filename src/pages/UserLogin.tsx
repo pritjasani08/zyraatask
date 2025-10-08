@@ -64,7 +64,7 @@ const UserLogin = () => {
           <Users className="w-8 h-8 text-secondary" />
         </div>
         <h1 className="text-3xl font-bold mb-2">Team Login</h1>
-        <p className="text-muted-foreground">TaskSync by Zyraa</p>
+        <p className="text-muted-foreground">TaskMate</p>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-6">

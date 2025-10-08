@@ -14,9 +14,8 @@ const Index = () => {
             <span className="text-4xl font-bold text-white">T</span>
           </div>
           <h1 className="text-5xl md:text-6xl font-bold text-white mb-4">
-            TaskSync
+            TaskMate
           </h1>
-          <p className="text-xl text-white/90 mb-2">by Zyraa</p>
           <p className="text-lg text-white/70 max-w-2xl mx-auto">
             Modern task management platform for teams
           </p>

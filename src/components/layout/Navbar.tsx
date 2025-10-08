@@ -45,8 +45,7 @@ export function Navbar({ username, role }: NavbarProps) {
             <span className="text-white font-bold text-lg">T</span>
           </div>
           <div>
-            <h1 className="font-bold text-lg">TaskSync</h1>
-            <p className="text-xs text-muted-foreground">by Zyraa</p>
+            <h1 className="font-bold text-lg">TaskMate</h1>
           </div>
         </div>
 

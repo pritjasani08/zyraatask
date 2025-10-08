@@ -64,7 +64,7 @@ const AdminLogin = () => {
           <Shield className="w-8 h-8 text-primary" />
         </div>
         <h1 className="text-3xl font-bold mb-2">Admin Portal</h1>
-        <p className="text-muted-foreground">TaskSync by Zyraa</p>
+        <p className="text-muted-foreground">TaskMate</p>
       </div>
 
       <form onSubmit={handleLogin} className="space-y-6">
